@@ -290,13 +290,14 @@ class StockReportController extends Controller
      */
     public function export(Request $request)
     {
+        // Tambahkan 'csv' ke dalam validasi format
         $validated = $request->validate([
-            'format' => 'required|in:excel,pdf',
+            'format' => 'required|in:excel,pdf,csv', // <-- Tambahkan 'csv' di sini
             'include_categories' => 'nullable|array',
             'stock_status' => 'nullable|in:all,normal,menipis,kritis,habis'
         ]);
 
-        // Ambil data berdasarkan filter
+        // Ambil data berdasarkan filter (sama seperti sebelumnya)
         $query = Product::with(['category', 'stockTransactions' => function ($q) {
             $q->latest()->limit(1);
         }])->where('is_active', true);
@@ -311,7 +312,7 @@ class StockReportController extends Controller
 
         $products = $query->orderBy('name')->get();
 
-        // Transform data untuk export
+        // Transform data untuk export (sama seperti sebelumnya)
         $exportData = $products->map(function ($product) {
             return [
                 'Kode Produk' => $product->code,
@@ -329,10 +330,16 @@ class StockReportController extends Controller
 
         $filename = 'laporan-stok-barang-' . date('Y-m-d-H-i-s');
 
-        if ($validated['format'] === 'excel') {
-            return $this->exportToExcel($exportData, $filename);
-        } else {
-            return $this->exportToPdf($exportData, $filename);
+        // Tambahkan case untuk CSV
+        switch ($validated['format']) {
+            case 'excel':
+                return $this->exportToExcel($exportData, $filename);
+            case 'pdf':
+                return $this->exportToPdf($exportData, $filename);
+            case 'csv':
+                return $this->exportToCsv($exportData, $filename);
+            default:
+                abort(400, 'Format export tidak didukung: ' . $validated['format']);
         }
     }
 
@@ -567,6 +574,33 @@ class StockReportController extends Controller
             'format' => 'excel',
             'records' => $data->count()
         ]);
+    }
+
+    /**
+     * Export ke CSV
+     */
+    private function exportToCsv($data, $filename)
+    {
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '.csv"',
+        ];
+
+        // Gunakan closure untuk menulis data ke output
+        $callback = function() use ($data) {
+            $output = fopen('php://output', 'w');
+            // Tulis header
+            if ($data->isNotEmpty()) {
+                fputcsv($output, array_keys($data->first()));
+            }
+            // Tulis baris data
+            foreach ($data as $row) {
+                fputcsv($output, $row);
+            }
+            fclose($output);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     /**

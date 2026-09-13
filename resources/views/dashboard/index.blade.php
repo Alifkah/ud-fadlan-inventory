@@ -8,17 +8,17 @@
     <!-- Statistics Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div class="bg-card-light dark:bg-card-dark p-6 rounded-lg shadow">
-            <p class="text-sm text-text-muted-light dark:text-text-muted-dark">Pendapatan Hari ini</p>
+            <p class="text-sm text-text-muted-light dark:text-text-muted-dark">Pendapatan Bulan ini</p>
             <p class="text-2xl font-bold text-text-light dark:text-text-dark" id="today-revenue">
                 Rp {{ number_format($currentMonthSales, 0, ',', '.') }}
             </p>
         </div>
         <div class="bg-card-light dark:bg-card-dark p-6 rounded-lg shadow">
             <p class="text-sm text-text-muted-light dark:text-text-muted-dark">Transaksi Hari ini</p>
-            <p class="text-2xl font-bold text-text-light dark:text-text-dark" id="today-transactions">150</p>
+            <p class="text-2xl font-bold text-text-light dark:text-text-dark" id="today-transactions">{{ $todayTransactions }}</p>
         </div>
         <div class="bg-card-light dark:bg-card-dark p-6 rounded-lg shadow">
-            <p class="text-sm text-text-muted-light dark:text-text-muted-dark">Stok Menipis</p>
+            <p class="text-sm text-text-muted-light dark:text-text-muted-dark">Stok Habis</p>
             <p class="text-2xl font-bold text-text-light dark:text-text-dark" id="low-stock">{{ $lowStockProducts }}</p>
         </div>
         <div class="bg-card-light dark:bg-card-dark p-6 rounded-lg shadow">
@@ -84,10 +84,6 @@
         <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
             <h2 class="text-xl font-semibold text-text-light dark:text-text-dark">Transaksi Terbaru</h2>
             <div class="flex items-center space-x-2">
-                <button class="flex items-center px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg text-text-light dark:text-text-dark hover:bg-gray-100 dark:hover:bg-gray-700">
-                    <span class="material-icons mr-2 text-sm">download</span>
-                    Export
-                </button>
                 <a href="{{ route('sales.index') }}" class="flex items-center px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-blue-600">
                     <span class="material-icons mr-2 text-sm">add</span>
                     Transaksi Baru
@@ -541,8 +537,8 @@ function showTransactionDetail(transactionId) {
                                         <tr>
                                             <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">${item.product_name}</td>
                                             <td class="px-3 py-2 text-sm text-gray-900 dark:text-white text-right">${item.quantity}</td>
-                                            <td class="px-3 py-2 text-sm text-gray-900 dark:text-white text-right">Rp ${formatRupiah(item.unit_price / 100)}</td>
-                                            <td class="px-3 py-2 text-sm text-gray-900 dark:text-white text-right">Rp ${formatRupiah(item.total_price / 100)}</td>
+                                            <td class="px-3 py-2 text-sm text-gray-900 dark:text-white text-right">Rp ${formatRupiah(item.unit_price)}</td>
+                                            <td class="px-3 py-2 text-sm text-gray-900 dark:text-white text-right">Rp ${formatRupiah(item.total_price)}</td>
                                         </tr>
                                     `).join('')}
                                 </tbody>

@@ -350,7 +350,7 @@
             <div class="signature-box">
                 <p>Disetujui oleh,</p>
                 <div class="signature-line">___________________</div>
-                <p style="font-size: 10px; color: #666;">Manager</p>
+                <p style="font-size: 10px; color: #666;">Owner</p>
             </div>
             
             <div class="signature-box">

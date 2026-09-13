@@ -68,8 +68,10 @@ class StockOpname extends Model
                 $opname->opname_number = static::generateOpnameNumber();
             }
             
-            // Calculate difference
-            $opname->difference = $opname->system_stock - $opname->physical_stock;
+            // Calculate difference: PHYSICAL - SYSTEM
+            // Positif (+) = Kelebihan stok fisik
+            // Negatif (-) = Kekurangan stok fisik
+            $opname->difference = $opname->physical_stock - $opname->system_stock;
             
             // Set default status jika belum diset
             if (empty($opname->status)) {
@@ -79,7 +81,8 @@ class StockOpname extends Model
 
         // Recalculate difference pada saat update
         static::updating(function ($opname) {
-            $opname->difference = $opname->system_stock - $opname->physical_stock;
+            // Calculate difference: PHYSICAL - SYSTEM
+            $opname->difference = $opname->physical_stock - $opname->system_stock;
         });
     }
 
@@ -147,9 +150,9 @@ class StockOpname extends Model
         if ($this->difference == 0) {
             return 'match';
         } elseif ($this->difference > 0) {
-            return 'minus'; // Fisik kurang dari sistem
+            return 'surplus'; // Fisik lebih dari sistem (kelebihan)
         } else {
-            return 'surplus'; // Fisik lebih dari sistem
+            return 'minus'; // Fisik kurang dari sistem (kekurangan)
         }
     }
 }

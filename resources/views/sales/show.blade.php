@@ -303,13 +303,13 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4 text-center text-sm text-text-light dark:text-text-dark">
-                                {{ number_format($item->quantity) }} {{ $item->product->unit ?? 'pcs' }}
+                                {{ number_format($item->quantity, 0, ',', '.') }} {{ $item->product->unit ?? 'pcs' }}
                             </td>
                             <td class="px-6 py-4 text-right text-sm text-text-light dark:text-text-dark">
-                                Rp {{ number_format($item->unit_price, 0, ',', '.') }}
+                                Rp {{ number_format(floatval($item->unit_price), 0, ',', '.') }}
                             </td>
                             <td class="px-6 py-4 text-right text-sm font-medium text-text-light dark:text-text-dark">
-                                Rp {{ number_format($item->total_price, 0, ',', '.') }}
+                                Rp {{ number_format(floatval($item->total_price), 0, ',', '.') }}
                             </td>
                         </tr>
                     @endforeach
@@ -344,7 +344,7 @@
 
                 @if($sale->tax > 0)
                 <div class="flex justify-between text-sm">
-                    <span class="text-gray-500 dark:text-gray-400">Pajak</span>
+                    <span class="text-gray-500 dark:text-gray-400">Ongkos Pengiriman</span>
                     <span class="text-text-light dark:text-text-dark font-medium">
                         Rp {{ number_format($sale->tax, 0, ',', '.') }}
                     </span>

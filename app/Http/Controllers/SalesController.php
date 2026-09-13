@@ -225,26 +225,26 @@ class SalesController extends Controller
                 'invoice_number' => $this->generateInvoiceNumber(),
                 'customer_id' => $validated['customer_id'],
                 'sale_date' => $validated['sale_date'],
-                'subtotal' => $validated['subtotal'],
-                'discount' => $validated['discount'] ?? 0,
-                'tax' => $validated['tax'] ?? 0,
-                'total' => $validated['total'],
+                'subtotal' => floatval($validated['subtotal']),
+                'discount' => floatval($validated['discount'] ?? 0),
+                'tax' => floatval($validated['tax'] ?? 0),
+                'total' => floatval($validated['total']),
                 'payment_method' => $validated['payment_method'],
                 'status' => $status,
                 'notes' => $validated['notes'] ?? null,
                 'user_id' => Auth::id(),
-                'paid_amount' => $validated['paid_amount'] ?? null,
-                'change' => $validated['change'] ?? null
+                'paid_amount' => $validated['paid_amount'] ? floatval($validated['paid_amount']) : null,
+                'change' => $validated['change'] ? floatval($validated['change']) : null
             ]);
 
-            // Buat item penjualan
+            // Buat item penjualan 
             foreach ($validated['items'] as $item) {
                 SaleItem::create([
                     'sale_id' => $sale->id,
                     'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                    'total_price' => $item['total_price']
+                    'quantity' => intval($item['quantity']),
+                    'unit_price' => floatval($item['unit_price']),
+                    'total_price' => floatval($item['total_price'])
                 ]);
             }
 
@@ -342,7 +342,6 @@ class SalesController extends Controller
             'tax' => 'nullable|numeric|min:0',
             'total' => 'required|numeric|min:0',
             'notes' => 'nullable|string|max:1000',
-            // Fields untuk kredit
             'due_date' => 'required_if:payment_method,credit|date|after:today',
             'interest_rate' => 'nullable|numeric|min:0|max:100',
             'credit_notes' => 'nullable|string|max:500'
@@ -506,24 +505,68 @@ class SalesController extends Controller
     }
 
     /**
-     * Print receipt penjualan
+     * Menampilkan struk penjualan dalam format PDF (untuk preview di browser)
+     *
+     * @param \App\Models\Sale $sale
+     * @return \Illuminate\Http\Response
      */
     public function printReceipt(Sale $sale)
     {
+        // Load relasi yang diperlukan
         $sale->load(['customer', 'saleItems.product.category', 'user', 'customerCredit']);
         
-        $data = [
-            'sale' => $sale,
-            'company' => [
-                'name' => config('app.name', 'UD Fadlan'),
-                'address' => 'MCCS 19DR, Jl. Muara Badak - Samarinda, Gas Alam Badak 5 Kec Muara Badak, Kabupaten Kutai Kartanegara, Kalimantan Timur',
-                'phone' => '0541-123456'
-            ]
+        // Ambil data perusahaan dari konfigurasi atau database
+        $company = [
+            'name' => config('app.name', 'UD Fadlan'),
+            'address' => 'MCCS 19DR, Jl. Muara Badak - Samarinda, Gas Alam Badak 5 Kec Muara Badak, Kabupaten Kutai Kartanegara, Kalimantan Timur',
+            'phone' => '0541-123456'
         ];
-
-        return view('sales.receipt', $data);
+        
+        // Render view sebagai HTML
+        $html = view('sales.receipt', compact('sale', 'company'))->render();
+        
+        // Gunakan DomPDF untuk menghasilkan PDF
+        $pdf = Pdf::loadHTML($html);
+        $pdf->setPaper('A4', 'portrait');
+        
+        // Nama file PDF
+        $filename = "Struk_Penjualan_{$sale->invoice_number}.pdf";
+        
+        // Tampilkan PDF di browser
+        return $pdf->stream($filename);
     }
 
+    /**
+     * Download struk penjualan dalam format PDF
+     *
+     * @param \App\Models\Sale $sale
+     * @return \Illuminate\Http\Response
+     */
+    public function downloadReceipt(Sale $sale)
+    {
+        // Load relasi yang diperlukan
+        $sale->load(['customer', 'saleItems.product.category', 'user', 'customerCredit']);
+        
+        // Ambil data perusahaan
+        $company = [
+            'name' => config('app.name', 'UD Fadlan'),
+            'address' => 'MCCS 19DR, Jl. Muara Badak - Samarinda, Gas Alam Badak 5 Kec Muara Badak, Kabupaten Kutai Kartanegara, Kalimantan Timur',
+            'phone' => '0541-123456'
+        ];
+        
+        // Render view sebagai HTML
+        $html = view('sales.receipt', compact('sale', 'company'))->render();
+        
+        // Gunakan DomPDF untuk menghasilkan PDF
+        $pdf = Pdf::loadHTML($html);
+        $pdf->setPaper('A4', 'portrait');
+        
+        // Nama file PDF
+        $filename = "Struk_Penjualan_{$sale->invoice_number}.pdf";
+        
+        // Download PDF
+        return $pdf->download($filename);
+    }
 
     /**
      * Search produk untuk AJAX
@@ -927,7 +970,6 @@ class SalesController extends Controller
         }
     }
 
-
     /**
      * Export to Excel
      */
@@ -996,5 +1038,4 @@ class SalesController extends Controller
         $pdf = Pdf::loadView('sales.export-pdf', $data)->setPaper('a4', 'landscape');
         return $pdf->download('sales_export_' . date('Ymd_His') . '.pdf');
     }
-
 }

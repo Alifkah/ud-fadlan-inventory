@@ -12,6 +12,8 @@ use App\Models\StockTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel; 
+use Barryvdh\DomPDF\Facade\Pdf; 
 
 class FinancialReportController extends Controller
 {
@@ -22,22 +24,18 @@ class FinancialReportController extends Controller
     {
         // Default bulan ini
         $period = $request->get('period', 'bulanan');
-        
         // Statistik utama untuk card dashboard
         $mainStats = $this->getMainStatistics();
-        
         // Data untuk chart trend penjualan (default bulanan)
         $salesTrend = $this->getSalesTrendDataByPeriod($period);
-        
         // Data produk terlaris
         $topProducts = $this->getTopSellingProducts();
-        
         // Total item di toko (donut chart)
         $storeItemsData = $this->getStoreItemsData();
 
         return view('financial-reports.index', compact(
             'mainStats',
-            'salesTrend', 
+            'salesTrend',
             'topProducts',
             'storeItemsData'
         ));
@@ -59,20 +57,16 @@ class FinancialReportController extends Controller
         // Bulan ini
         $dateFrom = Carbon::now()->startOfMonth();
         $dateTo = Carbon::now();
-
         // Pendapatan Bulan Ini
         $currentMonthRevenue = Sale::whereBetween('sale_date', [$dateFrom, $dateTo])
             ->where('status', 'completed')
             ->sum('total');
-
         // Pengeluaran Bulan Ini
         $currentMonthExpenditure = Purchase::whereBetween('purchase_date', [$dateFrom, $dateTo])
             ->where('status', 'completed')
             ->sum('total');
-
         // Laba Bersih
         $netProfit = $currentMonthRevenue - $currentMonthExpenditure;
-
         // Total Modal (berdasarkan nilai stok saat ini)
         $totalCapital = DB::table('products')
             ->where('is_active', true)
@@ -82,19 +76,16 @@ class FinancialReportController extends Controller
         // Perhitungan persentase perubahan dibandingkan bulan sebelumnya
         $previousPeriodStart = Carbon::now()->subMonth()->startOfMonth();
         $previousPeriodEnd = Carbon::now()->subMonth()->endOfMonth();
-
         $previousRevenue = Sale::whereBetween('sale_date', [$previousPeriodStart, $previousPeriodEnd])
             ->where('status', 'completed')
             ->sum('total');
-
         $previousExpenditure = Purchase::whereBetween('purchase_date', [$previousPeriodStart, $previousPeriodEnd])
             ->where('status', 'completed')
             ->sum('total');
 
-        $revenueGrowth = $previousRevenue > 0 ? 
+        $revenueGrowth = $previousRevenue > 0 ?
             (($currentMonthRevenue - $previousRevenue) / $previousRevenue) * 100 : 0;
-
-        $expenditureGrowth = $previousExpenditure > 0 ? 
+        $expenditureGrowth = $previousExpenditure > 0 ?
             (($currentMonthExpenditure - $previousExpenditure) / $previousExpenditure) * 100 : 0;
 
         return [
@@ -173,14 +164,12 @@ class FinancialReportController extends Controller
             $date = Carbon::now()->subDays($i)->format('Y-m-d');
             $sale = $salesData->get($date);
             $purchase = $purchaseData->get($date);
-
             $result->push([
                 'period' => Carbon::parse($date)->format('d M'),
                 'penjualan' => $sale ? round($sale->total_penjualan / 1000000, 1) : 0,
                 'pembelian' => $purchase ? round($purchase->total_pembelian / 1000000, 1) : 0,
             ]);
         }
-
         return $result;
     }
 
@@ -190,15 +179,12 @@ class FinancialReportController extends Controller
     private function getMingguanData()
     {
         $result = collect();
-        
         for ($i = 3; $i >= 0; $i--) {
             $weekStart = Carbon::now()->subWeeks($i)->startOfWeek();
             $weekEnd = Carbon::now()->subWeeks($i)->endOfWeek();
-
             $sales = Sale::whereBetween('sale_date', [$weekStart, $weekEnd])
                 ->where('status', 'completed')
                 ->sum('total');
-
             $purchases = Purchase::whereBetween('purchase_date', [$weekStart, $weekEnd])
                 ->where('status', 'completed')
                 ->sum('total');
@@ -209,7 +195,6 @@ class FinancialReportController extends Controller
                 'pembelian' => round($purchases / 1000000, 1),
             ]);
         }
-
         return $result;
     }
 
@@ -219,15 +204,12 @@ class FinancialReportController extends Controller
     private function getBulananData()
     {
         $result = collect();
-        
         for ($i = 5; $i >= 0; $i--) {
             $monthStart = Carbon::now()->subMonths($i)->startOfMonth();
             $monthEnd = Carbon::now()->subMonths($i)->endOfMonth();
-
             $sales = Sale::whereBetween('sale_date', [$monthStart, $monthEnd])
                 ->where('status', 'completed')
                 ->sum('total');
-
             $purchases = Purchase::whereBetween('purchase_date', [$monthStart, $monthEnd])
                 ->where('status', 'completed')
                 ->sum('total');
@@ -238,7 +220,6 @@ class FinancialReportController extends Controller
                 'pembelian' => round($purchases / 1000000, 1),
             ]);
         }
-
         return $result;
     }
 
@@ -296,30 +277,29 @@ class FinancialReportController extends Controller
     private function getStoreItemsData()
     {
         $categories = Category::with(['products' => function ($query) {
-                $query->where('is_active', true);
-            }])
+            $query->where('is_active', true);
+        }])
             ->where('is_active', true)
             ->get();
 
         $totalProducts = Product::where('is_active', true)->count();
-        
+
         $categoryData = $categories->map(function ($category) use ($totalProducts) {
             $productCount = $category->products->count();
             $percentage = $totalProducts > 0 ? round(($productCount / $totalProducts) * 100) : 0;
-            
             return [
                 'name' => $category->name,
                 'count' => $productCount,
                 'percentage' => $percentage
             ];
         })
-        ->sortByDesc('count')
-        ->take(4)
-        ->values();
+            ->sortByDesc('count')
+            ->take(4)
+            ->values();
 
         $topCategoriesCount = $categoryData->sum('count');
         $otherCount = $totalProducts - $topCategoriesCount;
-        
+
         if ($otherCount > 0) {
             $categoryData->push([
                 'name' => 'Lainnya',
@@ -384,11 +364,9 @@ class FinancialReportController extends Controller
         $totalRevenue = Sale::whereBetween('sale_date', [$dateFrom, $dateTo])
             ->where('status', 'completed')
             ->sum('total');
-
         $discountGiven = Sale::whereBetween('sale_date', [$dateFrom, $dateTo])
             ->where('status', 'completed')
             ->sum('discount');
-
         $netRevenue = $totalRevenue - $discountGiven;
 
         // Harga Pokok Penjualan (HPP)
@@ -403,7 +381,7 @@ class FinancialReportController extends Controller
         $grossProfit = $netRevenue - $cogs;
 
         // Beban Operasional
-        $operationalExpenses = 0;
+        $operationalExpenses = 0; // Placeholder, sesuaikan dengan logika beban Anda
 
         // Laba Bersih
         $netProfit = $grossProfit - $operationalExpenses;
@@ -441,18 +419,21 @@ class FinancialReportController extends Controller
     public function export(Request $request)
     {
         $validated = $request->validate([
-            'format' => 'required|in:excel,pdf'
+            'format' => 'required|in:excel,pdf,csv'
         ]);
 
-        // Bulan ini
+        // Ambil periode dari request, default bulanan
+        $period = $request->get('period', 'bulanan');
+
+        // Bulan ini untuk data utama
         $dateFrom = Carbon::now()->startOfMonth();
         $dateTo = Carbon::now();
 
         $mainStats = $this->getMainStatistics();
-        $salesTrend = $this->getBulananData();
-        $topProducts = $this->getTopSellingProducts(10);
+        $salesTrend = $this->getBulananData(); // Gunakan data bulanan default untuk ekspor
+        $topProducts = $this->getTopSellingProducts(10); // Ambil 10 produk terlaris untuk ekspor
 
-        // Detail transaksi
+        // Detail transaksi penjualan dan pembelian
         $salesDetails = Sale::with(['customer', 'saleItems.product'])
             ->whereBetween('sale_date', [$dateFrom, $dateTo])
             ->where('status', 'completed')
@@ -480,37 +461,143 @@ class FinancialReportController extends Controller
             'generated_by' => auth()->user()->name
         ];
 
-        if ($validated['format'] === 'excel') {
-            return $this->exportToExcel($reportData);
-        } else {
-            return $this->exportToPdf($reportData);
+        $format = $validated['format'];
+
+        // Gunakan nama file yang dinamis
+        $fileName = 'Laporan_Keuangan_' . $dateFrom->format('Y-m-d') . '_to_' . $dateTo->format('Y-m-d') . '_' . strtoupper($format);
+
+        if ($format === 'excel') {
+            return $this->exportToExcel($reportData, $fileName);
+        } elseif ($format === 'pdf') {
+            return $this->exportToPdf($reportData, $fileName);
+        } else { // csv
+            return $this->exportToCsv($reportData, $fileName);
         }
     }
 
     /**
-     * Export ke Excel (placeholder)
+     * Export ke Excel menggunakan Laravel Excel
      */
-    private function exportToExcel($data)
+    private function exportToExcel($data, $fileName)
     {
-        // Implementasi export menggunakan Laravel Excel
-        return response()->json([
-            'success' => true,
-            'message' => 'Export Excel akan segera tersedia',
-            'data' => $data
-        ]);
+        // Buat instance dari kelas export (Anda perlu membuatnya)
+        // Contoh: $export = new FinancialReportExport($data);
+        // return Excel::download($export, $fileName . '.xlsx');
+
+        // Karena implementasi Excel membutuhkan kelas export tambahan,
+        // kita gunakan library bawaan atau kelas export buatan sendiri.
+        // Contoh sederhana dengan array ke Excel (menggunakan Laravel Excel Collection):
+        $topProductsExport = collect($data['top_products'])->map(function ($item) {
+            return [
+                'Rank' => $item['rank'],
+                'Nama Produk' => $item['product_name'],
+                'Kode Produk' => $item['product_code'],
+                'Jumlah Terjual' => $item['total_quantity'] . ' ' . $item['unit'],
+                'Harga Rata-rata' => 'Rp ' . number_format($item['avg_price'], 0, ',', '.'),
+                'Total Penjualan' => 'Rp ' . number_format($item['total_sales'], 0, ',', '.'),
+                'Persentase' => $item['percentage'] . '%'
+            ];
+        });
+
+        return Excel::download(new class($topProductsExport) implements \Maatwebsite\Excel\Concerns\FromCollection
+        {
+            private $data;
+
+            public function __construct($data)
+            {
+                $this->data = $data;
+            }
+
+            public function collection()
+            {
+                return $this->data;
+            }
+        }, $fileName . '.xlsx');
     }
 
     /**
-     * Export ke PDF (placeholder)
+     * Export ke PDF menggunakan DomPDF
      */
-    private function exportToPdf($data)
+    private function exportToPdf($data, $fileName)
     {
-        // Implementasi export menggunakan DomPDF
-        return response()->json([
-            'success' => true,
-            'message' => 'Export PDF akan segera tersedia',
-            'data' => $data
-        ]);
+        // Buat view PDF (Anda perlu membuat view PDF, misalnya financial-reports.pdf)
+        // Contoh: $pdf = PDF::loadView('financial-reports.pdf', $data);
+        // return $pdf->download($fileName . '.pdf');
+
+        // Karena implementasi PDF membutuhkan view tambahan,
+        // kita gunakan view sederhana yang menampilkan data utama dan produk terlaris.
+        $pdf = PDF::loadView('financial-reports.pdf_export', $data);
+        return $pdf->download($fileName . '.pdf');
+    }
+
+    /**
+     * Export ke CSV
+     * Fungsi ini menghasilkan file CSV secara manual.
+     */
+    private function exportToCsv($data, $fileName)
+    {
+        $headers = [
+            "Content-type" => "text/csv",
+            "Content-Disposition" => "attachment; filename=$fileName.csv",
+            "Pragma" => "no-cache",
+            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
+            "Expires" => "0"
+        ];
+
+        $callback = function() use ($data) {
+            $file = fopen('php://output', 'w');
+            // Header utama
+            fputcsv($file, ['LAPORAN KEUANGAN']);
+            fputcsv($file, []);
+            fputcsv($file, ['Periode:', $data['period']['label']]);
+            fputcsv($file, ['Dibuat pada:', $data['generated_at']->format('d/m/Y H:i')]);
+            fputcsv($file, ['Dibuat oleh:', $data['generated_by']]);
+            fputcsv($file, []);
+
+            // Statistik Utama
+            fputcsv($file, ['STATISTIK UTAMA']);
+            fputcsv($file, ['Deskripsi', 'Jumlah', 'Perubahan']);
+            fputcsv($file, ['Pendapatan Bulan Ini', 'Rp ' . number_format($data['main_stats']['revenue']['amount'], 0, ',', '.'), $data['main_stats']['revenue']['growth_label']]);
+            fputcsv($file, ['Pengeluaran Bulan Ini', 'Rp ' . number_format($data['main_stats']['expenditure']['amount'], 0, ',', '.'), $data['main_stats']['expenditure']['growth_label']]);
+            fputcsv($file, ['Laba Bersih', 'Rp ' . number_format($data['main_stats']['net_profit']['amount'], 0, ',', '.'), '']);
+            fputcsv($file, ['Total Modal', 'Rp ' . number_format($data['main_stats']['total_capital']['amount'], 0, ',', '.'), '']);
+            fputcsv($file, []);
+
+            // Produk Terlaris
+            fputcsv($file, ['PRODUK TERLARIS']);
+            fputcsv($file, ['Rank', 'Nama Produk', 'Kode Produk', 'Jumlah Terjual', 'Harga Rata-rata', 'Total Penjualan', 'Persentase']);
+            foreach ($data['top_products'] as $product) {
+                fputcsv($file, [
+                    $product['rank'],
+                    $product['product_name'],
+                    $product['product_code'],
+                    $product['total_quantity'] . ' ' . $product['unit'],
+                    'Rp ' . number_format($product['avg_price'], 0, ',', '.'),
+                    'Rp ' . number_format($product['total_sales'], 0, ',', '.'),
+                    $product['percentage'] . '%'
+                ]);
+            }
+            fputcsv($file, []);
+
+            // Detail Penjualan (Opsional, bisa ditambahkan)
+            // fputcsv($file, ['DETAIL PENJUALAN']);
+            // fputcsv($file, ['Tanggal', 'Kode Penjualan', 'Pelanggan', 'Total']);
+            // foreach ($data['sales_details'] as $sale) {
+            //     fputcsv($file, [$sale->sale_date->format('d/m/Y'), $sale->code, $sale->customer->name ?? 'N/A', 'Rp ' . number_format($sale->total, 0, ',', '.')]);
+            // }
+            // fputcsv($file, []);
+
+            // Detail Pembelian (Opsional, bisa ditambahkan)
+            // fputcsv($file, ['DETAIL PEMBELIAN']);
+            // fputcsv($file, ['Tanggal', 'Kode Pembelian', 'Supplier', 'Total']);
+            // foreach ($data['purchase_details'] as $purchase) {
+            //     fputcsv($file, [$purchase->purchase_date->format('d/m/Y'), $purchase->code, $purchase->supplier->name ?? 'N/A', 'Rp ' . number_format($purchase->total, 0, ',', '.')]);
+            // }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     /**
@@ -520,7 +607,7 @@ class FinancialReportController extends Controller
     {
         $dateFrom = Carbon::now()->startOfMonth();
         $dateTo = Carbon::now();
-        
+
         return DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->join('products', 'sale_items.product_id', '=', 'products.id')
@@ -567,7 +654,7 @@ class FinancialReportController extends Controller
                 'month' => Carbon::create($currentYear, $month, 1)->format('M'),
                 'current_year' => round($currentSales / 1000000, 1),
                 'previous_year' => round($previousSales / 1000000, 1),
-                'growth' => $previousSales > 0 ? 
+                'growth' => $previousSales > 0 ?
                     round((($currentSales - $previousSales) / $previousSales) * 100, 1) : 0
             ];
         }

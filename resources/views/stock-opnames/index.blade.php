@@ -23,7 +23,7 @@
         <div class="bg-white dark:bg-card-dark rounded-lg shadow p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm text-text-muted-light dark:text-text-muted-dark">Menunggu Approval</p>
+                    <p class="text-sm text-text-muted-light dark:text-text-muted-dark">Menunggu Persetujuan</p>
                     <h3 class="text-2xl font-bold text-text-light dark:text-text-dark mt-1">{{ $stats['pending'] }}</h3>
                 </div>
                 <div class="w-14 h-14 flex items-center justify-center bg-yellow-100 dark:bg-yellow-900 rounded-full">
@@ -85,8 +85,8 @@
                     <div>
                         <select name="status" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:text-white">
                             <option value="">Semua Status</option>
-                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                            <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
+                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Menunggu</option>
+                            <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Disetujui</option>
                         </select>
                     </div>
 
@@ -155,18 +155,18 @@
                                 <span class="text-sm text-text-light dark:text-text-dark">{{ number_format($opname->physical_stock) }} {{ $opname->product->unit }}</span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="text-sm font-medium {{ $opname->difference == 0 ? 'text-green-600' : ($opname->difference > 0 ? 'text-red-600' : 'text-blue-600') }}">
+                                <span class="text-sm font-medium {{ $opname->difference == 0 ? 'text-green-600' : ($opname->difference > 0 ? 'text-blue-600' : 'text-red-600') }}">
                                     {{ $opname->difference > 0 ? '+' : '' }}{{ number_format($opname->difference) }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 @if($opname->status === 'pending')
                                     <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                                        Pending
+                                        Menunggu
                                     </span>
                                 @else
                                     <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                                        Approved
+                                        Disetujui
                                     </span>
                                 @endif
                             </td>
@@ -386,12 +386,12 @@
             <button onclick="closeDetailModal()" class="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
                 Tutup
             </button>
-            <button onclick="printDetail()" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-600">
+            <!-- <button onclick="printDetail()" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-600">
                 <span class="flex items-center gap-2">
                     <span class="material-icons text-sm">print</span>
                     <span>Cetak</span>
                 </span>
-            </button>
+            </button> -->
         </div>
     </div>
 </div>
@@ -416,17 +416,20 @@
         const selectedOption = productSelect.options[productSelect.selectedIndex];
         const systemStock = parseInt(selectedOption.dataset.stock) || 0;
         const physicalStock = parseInt(document.getElementById('physical_stock').value) || 0;
-        const difference = systemStock - physicalStock;
+        
+        const difference = physicalStock - systemStock;
 
         const alert = document.getElementById('differenceAlert');
         const diffText = document.getElementById('differenceText');
 
         if (physicalStock > 0 && difference !== 0) {
             alert.classList.remove('hidden');
-            if (difference > 0) {
+            if (difference < 0) {
+                // Negatif = Kekurangan
                 alert.className = 'p-4 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200';
                 diffText.textContent = `Stok fisik kurang ${Math.abs(difference)} unit dari sistem`;
             } else {
+                // Positif = Kelebihan
                 alert.className = 'p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200';
                 diffText.textContent = `Stok fisik lebih ${Math.abs(difference)} unit dari sistem`;
             }

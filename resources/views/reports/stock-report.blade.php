@@ -82,18 +82,19 @@
         </div>
     </div>
 
-    <!-- Top Selling Products Table -->
+   <!-- Top Selling Products Table -->
     <div class="bg-card-light dark:bg-card-dark p-6 rounded-lg shadow">
         <div class="flex justify-between items-center mb-6">
             <h3 class="text-lg font-semibold text-text-light dark:text-text-dark">Produk Terlaris Bulan Ini</h3>
-            <div class="relative group">
-                <button class="bg-primary text-white px-4 py-2 rounded-lg flex items-center text-sm hover:bg-blue-600">
+            <!-- Dropdown Export -->
+            <div class="relative" id="export-dropdown-container">
+                <button class="bg-primary text-white px-4 py-2 rounded-lg flex items-center text-sm hover:bg-blue-600" id="export-dropdown-button">
                     <span class="material-icons mr-2 text-base">file_download</span>
                     Export
                 </button>
-                <div class="absolute right-0 mt-2 w-48 bg-card-light dark:bg-card-dark rounded-md shadow-lg hidden group-hover:block z-10 border border-gray-200 dark:border-gray-700">
-                    <a href="#" onclick="event.preventDefault(); exportReport('excel')" class="block px-4 py-2 text-sm text-text-light dark:text-text-dark hover:bg-gray-100 dark:hover:bg-gray-700">Export as Excel</a>
-                    <a href="#" onclick="event.preventDefault(); exportReport('pdf')" class="block px-4 py-2 text-sm text-text-light dark:text-text-dark hover:bg-gray-100 dark:hover:bg-gray-700">Export as PDF</a>
+                <div class="absolute right-0 mt-2 w-48 bg-card-light dark:bg-card-dark rounded-md shadow-lg py-1 hidden z-10 border border-gray-200 dark:border-gray-700" id="export-dropdown-menu">
+                    <a href="#" data-format="csv" class="export-option block px-4 py-2 text-sm text-text-light dark:text-text-dark hover:bg-gray-100 dark:hover:bg-gray-700">Export as CSV</a>
+                    <a href="#" data-format="pdf" class="export-option block px-4 py-2 text-sm text-text-light dark:text-text-dark hover:bg-gray-100 dark:hover:bg-gray-700">Export as PDF</a>
                 </div>
             </div>
         </div>
@@ -464,6 +465,72 @@ function editProduct(rank) {
     if (product) {
         window.location.href = `{{ url('stock') }}/${product.product_code}/edit`;
     }
+}
+
+// --- Tambahkan script baru untuk dropdown export ---
+document.addEventListener('DOMContentLoaded', function() {
+    const exportDropdownButton = document.getElementById('export-dropdown-button');
+    const exportDropdownMenu = document.getElementById('export-dropdown-menu');
+    const exportOptions = document.querySelectorAll('.export-option');
+
+    // Toggle dropdown saat tombol diklik
+    exportDropdownButton.addEventListener('click', function(event) {
+        event.stopPropagation(); // Mencegah event bubble ke document
+        exportDropdownMenu.classList.toggle('hidden');
+    });
+
+    // Handle klik pada opsi export
+    exportOptions.forEach(option => {
+        option.addEventListener('click', function(event) {
+            event.preventDefault(); // Cegah default behavior <a>
+            const format = this.getAttribute('data-format');
+            exportReport(format); // Panggil fungsi export dengan format yang dipilih
+            // Optional: Tutup dropdown setelah export dimulai
+            exportDropdownMenu.classList.add('hidden');
+        });
+    });
+
+    // Tutup dropdown jika klik di luar area dropdown
+    document.addEventListener('click', function(event) {
+        if (exportDropdownButton && exportDropdownMenu) {
+            if (!exportDropdownButton.contains(event.target) && !exportDropdownMenu.contains(event.target)) {
+                exportDropdownMenu.classList.add('hidden');
+            }
+        }
+    });
+});
+
+// Perbarui fungsi exportReport untuk menerima parameter format
+function exportReport(format) {
+    const form = document.createElement('form');
+    form.method = 'POST'; // Gunakan POST untuk keamanan dan mengirim CSRF
+    form.action = '{{ route('stock-reports.export') }}';
+
+    // Tambahkan CSRF token
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = '_token';
+    csrfInput.value = '{{ csrf_token() }}';
+    form.appendChild(csrfInput);
+
+    // Tambahkan parameter format (csv, excel, pdf)
+    const formatInput = document.createElement('input');
+    formatInput.type = 'hidden';
+    formatInput.name = 'format';
+    formatInput.value = format;
+    form.appendChild(formatInput);
+
+    // Tambahkan parameter stock_status jika diperlukan
+    const stockStatusInput = document.createElement('input');
+    stockStatusInput.type = 'hidden';
+    stockStatusInput.name = 'stock_status';
+    stockStatusInput.value = 'all';
+    form.appendChild(stockStatusInput);
+
+    // Submit form
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
 }
 </script>
 @endpush

@@ -76,7 +76,14 @@
             </div>
             <div class="flex space-x-2">
                 <button class="flex-1 bg-primary text-white py-2 rounded-md text-sm font-medium view-category" 
-                        data-id="{{ $category['id'] }}" data-name="{{ $category['name'] }}" data-description="{{ $category['description'] }}">
+                        data-id="{{ $category['id'] }}" 
+                        data-name="{{ $category['name'] }}" 
+                        data-description="{{ $category['description'] }}"
+                        data-is-active="{{ $category['is_active'] }}"
+                        data-total-products="{{ $category['total_products'] }}"
+                        data-active-products="{{ $category['active_products'] }}"
+                        data-low-stock="{{ $category['low_stock_products'] }}"
+                        data-total-stock="{{ $category['total_stock'] }}">
                     Lihat
                 </button>
                 <button class="flex-1 bg-amber-500 text-white py-2 rounded-md text-sm font-medium edit-category" 
@@ -94,7 +101,7 @@
         @endforeach
 
         <!-- Add New Category Card -->
-        <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800" id="openAddCard">
+        <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" id="openAddCard">
             <div class="w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center mb-4">
                 <span class="material-icons text-4xl text-text-muted-light dark:text-text-muted-dark">add</span>
             </div>
@@ -124,17 +131,16 @@
                 <label class="block text-sm font-medium text-text-muted-light dark:text-text-muted-dark mb-1" for="description_add">Deskripsi</label>
                 <textarea class="w-full bg-background-light dark:bg-background-dark border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-text-light dark:text-text-dark focus:outline-none focus:ring-1 focus:ring-primary" 
                           id="description_add" name="description" placeholder="Deskripsi singkat mengenai kategori" rows="3"></textarea>
-                <div class="invalid-feedback hidden text-red-500 text-sm mt-1">Deskripsi tidak boleh kosong.</div>
             </div>
             <div class="mb-6">
                 <label class="flex items-center">
-                    <input type="checkbox" name="is_active" id="is_active_add" checked class="rounded">
+                    <input type="checkbox" name="is_active" id="is_active_add" checked class="rounded text-primary focus:ring-primary">
                     <span class="ml-2 text-sm text-text-light dark:text-text-dark">Kategori Aktif</span>
                 </label>
             </div>
             <div class="flex justify-end space-x-3">
-                <button class="px-4 py-2 text-sm font-medium rounded-md bg-gray-200 dark:bg-gray-600 text-text-light dark:text-text-dark closeModal" type="button">Batal</button>
-                <button class="px-4 py-2 text-sm font-medium rounded-md bg-primary text-white flex items-center" type="submit">
+                <button class="px-4 py-2 text-sm font-medium rounded-md bg-gray-200 dark:bg-gray-600 text-text-light dark:text-text-dark hover:bg-gray-300 dark:hover:bg-gray-500 closeModal" type="button">Batal</button>
+                <button class="px-4 py-2 text-sm font-medium rounded-md bg-primary text-white hover:bg-primary/90 flex items-center" type="submit">
                     <span class="material-icons text-sm mr-1">save</span> Simpan
                 </button>
             </div>
@@ -144,28 +150,55 @@
 
 <!-- View Category Modal -->
 <div class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 hidden" id="viewCategoryModal">
-    <div class="bg-card-light dark:bg-card-dark rounded-lg shadow-xl w-full max-w-md p-6">
+    <div class="bg-card-light dark:bg-card-dark rounded-lg shadow-xl w-full max-w-2xl p-6">
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-xl font-bold text-text-light dark:text-text-dark">Detail Kategori</h3>
             <button class="text-text-muted-light dark:text-text-muted-dark hover:text-text-light dark:hover:text-text-dark closeModal">
                 <span class="material-icons">close</span>
             </button>
         </div>
-        <form>
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-text-muted-light dark:text-text-muted-dark mb-1" for="category_name_view">Nama Kategori</label>
-                <input class="w-full bg-background-light dark:bg-background-dark border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-text-light dark:text-text-dark focus:outline-none focus:ring-1 focus:ring-primary" 
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-text-muted-light dark:text-text-muted-dark mb-1">Nama Kategori</label>
+                <input class="w-full bg-background-light dark:bg-background-dark border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-text-light dark:text-text-dark" 
                        id="category_name_view" readonly type="text"/>
             </div>
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-text-muted-light dark:text-text-muted-dark mb-1" for="description_view">Deskripsi</label>
-                <textarea class="w-full bg-background-light dark:bg-background-dark border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-text-light dark:text-text-dark focus:outline-none focus:ring-1 focus:ring-primary" 
+            <div>
+                <label class="block text-sm font-medium text-text-muted-light dark:text-text-muted-dark mb-1">Deskripsi</label>
+                <textarea class="w-full bg-background-light dark:bg-background-dark border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-text-light dark:text-text-dark" 
                           id="description_view" readonly rows="3"></textarea>
             </div>
-            <div class="flex justify-end">
-                <button class="px-4 py-2 text-sm font-medium rounded-md bg-gray-200 dark:bg-gray-600 text-text-light dark:text-text-dark closeModal" type="button">Tutup</button>
+            <div>
+                <label class="block text-sm font-medium text-text-muted-light dark:text-text-muted-dark mb-1">Status</label>
+                <input class="w-full bg-background-light dark:bg-background-dark border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-text-light dark:text-text-dark" 
+                       id="status_view" readonly type="text"/>
             </div>
-        </form>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-text-muted-light dark:text-text-muted-dark mb-1">Total Produk</label>
+                    <input class="w-full bg-background-light dark:bg-background-dark border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-text-light dark:text-text-dark" 
+                           id="total_products_view" readonly type="text"/>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-text-muted-light dark:text-text-muted-dark mb-1">Produk Aktif</label>
+                    <input class="w-full bg-background-light dark:bg-background-dark border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-text-light dark:text-text-dark" 
+                           id="active_products_view" readonly type="text"/>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-text-muted-light dark:text-text-muted-dark mb-1">Stok Rendah</label>
+                    <input class="w-full bg-background-light dark:bg-background-dark border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-text-light dark:text-text-dark" 
+                           id="low_stock_view" readonly type="text"/>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-text-muted-light dark:text-text-muted-dark mb-1">Total Stok</label>
+                    <input class="w-full bg-background-light dark:bg-background-dark border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-text-light dark:text-text-dark" 
+                           id="total_stock_view" readonly type="text"/>
+                </div>
+            </div>
+        </div>
+        <div class="flex justify-end mt-6">
+            <button class="px-4 py-2 text-sm font-medium rounded-md bg-gray-200 dark:bg-gray-600 text-text-light dark:text-text-dark hover:bg-gray-300 dark:hover:bg-gray-500 closeModal" type="button">Tutup</button>
+        </div>
     </div>
 </div>
 
@@ -192,18 +225,17 @@
                 <label class="block text-sm font-medium text-text-muted-light dark:text-text-muted-dark mb-1" for="description_edit">Deskripsi</label>
                 <textarea class="w-full bg-background-light dark:bg-background-dark border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-text-light dark:text-text-dark focus:outline-none focus:ring-1 focus:ring-primary" 
                           id="description_edit" name="description" placeholder="Deskripsi singkat mengenai kategori" rows="3"></textarea>
-                <div class="invalid-feedback hidden text-red-500 text-sm mt-1">Deskripsi tidak boleh kosong.</div>
             </div>
             <div class="mb-6">
                 <label class="flex items-center">
-                    <input type="checkbox" name="is_active" id="is_active_edit" class="rounded">
+                    <input type="checkbox" name="is_active" id="is_active_edit" class="rounded text-primary focus:ring-primary">
                     <span class="ml-2 text-sm text-text-light dark:text-text-dark">Kategori Aktif</span>
                 </label>
             </div>
             <div class="flex justify-end space-x-3">
-                <button class="px-4 py-2 text-sm font-medium rounded-md bg-gray-200 dark:bg-gray-600 text-text-light dark:text-text-dark closeModal" type="button">Batal</button>
-                <button class="px-4 py-2 text-sm font-medium rounded-md bg-primary text-white flex items-center" type="submit">
-                    <span class="material-icons text-sm mr-1">save</span> Simpan Perubahan
+                <button class="px-4 py-2 text-sm font-medium rounded-md bg-gray-200 dark:bg-gray-600 text-text-light dark:text-text-dark hover:bg-gray-300 dark:hover:bg-gray-500 closeModal" type="button">Batal</button>
+                <button class="px-4 py-2 text-sm font-medium rounded-md bg-primary text-white hover:bg-primary/90 flex items-center" type="submit">
+                    <span class="material-icons text-sm mr-1">save</span> Update
                 </button>
             </div>
         </form>
@@ -213,7 +245,32 @@
 @endsection
 
 @push('scripts')
+<!-- Include SheetJS Library from CDN -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
 <script>
+// Wait for library to load
+let xlsxLoadAttempts = 0;
+const maxAttempts = 10;
+
+function checkXLSXLoaded() {
+    if (typeof XLSX !== 'undefined') {
+        console.log('SheetJS library loaded successfully');
+        return true;
+    }
+    
+    xlsxLoadAttempts++;
+    if (xlsxLoadAttempts < maxAttempts) {
+        setTimeout(checkXLSXLoaded, 100);
+    } else {
+        console.error('SheetJS library failed to load after multiple attempts');
+    }
+    return false;
+}
+
+// Start checking
+checkXLSXLoaded();
+
 document.addEventListener('DOMContentLoaded', function () {
     const openModalButtons = document.querySelectorAll('[data-modal]');
     const closeModalButtons = document.querySelectorAll('.closeModal');
@@ -241,18 +298,17 @@ document.addEventListener('DOMContentLoaded', function () {
     function closeModal(modalElement) {
         modalElement.classList.add('hidden');
         modalElement.classList.remove('flex');
-        // Reset form inside the modal if it exists
         const form = modalElement.querySelector('form');
         if (form) {
             form.reset();
             form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
             form.querySelectorAll('.invalid-feedback').forEach(el => el.classList.add('hidden'));
+            form.querySelectorAll('.border-red-500').forEach(el => el.classList.remove('border-red-500'));
         }
     }
 
     // Filter functionality
     function filterCategories(status) {
-        // Update button states
         [filterAll, filterActive, filterInactive].forEach(btn => {
             btn.classList.remove('bg-primary', 'text-white');
             btn.classList.add('bg-gray-200', 'dark:bg-gray-600', 'text-text-light', 'dark:text-text-dark');
@@ -267,17 +323,15 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        // Update active button
         const activeButton = status === 'all' ? filterAll : 
                            status === 'active' ? filterActive : filterInactive;
         activeButton.classList.remove('bg-gray-200', 'dark:bg-gray-600', 'text-text-light', 'dark:text-text-dark');
         activeButton.classList.add('bg-primary', 'text-white');
     }
 
-    // Event listeners for filters
-    filterAll.addEventListener('click', () => filterCategories('all'));
-    filterActive.addEventListener('click', () => filterCategories('active'));
-    filterInactive.addEventListener('click', () => filterCategories('inactive'));
+    if (filterAll) filterAll.addEventListener('click', () => filterCategories('all'));
+    if (filterActive) filterActive.addEventListener('click', () => filterCategories('active'));
+    if (filterInactive) filterInactive.addEventListener('click', () => filterCategories('inactive'));
 
     // Modal event listeners
     if (openAddModalButton) {
@@ -291,12 +345,14 @@ document.addEventListener('DOMContentLoaded', function () {
     closeModalButtons.forEach(button => {
         button.addEventListener('click', () => {
             const modal = button.closest('.fixed');
-            closeModal(modal);
+            if (modal) {
+                closeModal(modal);
+            }
         });
     });
 
     window.addEventListener('click', function(event) {
-        if (event.target.classList.contains('fixed')) {
+        if (event.target.classList.contains('fixed') && event.target.classList.contains('bg-gray-900')) {
             closeModal(event.target);
         }
     });
@@ -304,11 +360,30 @@ document.addEventListener('DOMContentLoaded', function () {
     // View category
     document.querySelectorAll('.view-category').forEach(button => {
         button.addEventListener('click', function() {
-            const name = this.dataset.name;
-            const description = this.dataset.description;
+            const name = this.dataset.name || '';
+            const description = this.dataset.description || 'Tidak ada deskripsi';
+            const isActive = this.dataset.isActive === '1';
+            const totalProducts = this.dataset.totalProducts || '0';
+            const activeProducts = this.dataset.activeProducts || '0';
+            const lowStock = this.dataset.lowStock || '0';
+            const totalStock = this.dataset.totalStock || '0';
             
-            document.getElementById('category_name_view').value = name;
-            document.getElementById('description_view').value = description || '';
+            // Populate modal fields
+            const nameInput = document.getElementById('category_name_view');
+            const descInput = document.getElementById('description_view');
+            const statusInput = document.getElementById('status_view');
+            const totalProdInput = document.getElementById('total_products_view');
+            const activeProdInput = document.getElementById('active_products_view');
+            const lowStockInput = document.getElementById('low_stock_view');
+            const totalStockInput = document.getElementById('total_stock_view');
+
+            if (nameInput) nameInput.value = name;
+            if (descInput) descInput.value = description;
+            if (statusInput) statusInput.value = isActive ? 'Aktif' : 'Tidak Aktif';
+            if (totalProdInput) totalProdInput.value = totalProducts;
+            if (activeProdInput) activeProdInput.value = activeProducts;
+            if (lowStockInput) lowStockInput.value = lowStock;
+            if (totalStockInput) totalStockInput.value = totalStock;
             
             openModal('viewCategoryModal');
         });
@@ -319,23 +394,45 @@ document.addEventListener('DOMContentLoaded', function () {
         button.addEventListener('click', function() {
             const categoryId = this.dataset.id;
             
-            fetch(`/categories/${categoryId}/edit`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        const category = data.data;
-                        document.getElementById('edit_category_id').value = category.id;
-                        document.getElementById('category_name_edit').value = category.name;
-                        document.getElementById('description_edit').value = category.description || '';
-                        document.getElementById('is_active_edit').checked = category.is_active;
-                        
-                        openModal('editCategoryModal');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Gagal mengambil data kategori');
-                });
+            if (!categoryId) {
+                alert('ID kategori tidak ditemukan');
+                return;
+            }
+            
+            fetch(`/categories/${categoryId}/edit`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success && data.data) {
+                    const category = data.data;
+                    const idInput = document.getElementById('edit_category_id');
+                    const nameInput = document.getElementById('category_name_edit');
+                    const descInput = document.getElementById('description_edit');
+                    const activeInput = document.getElementById('is_active_edit');
+
+                    if (idInput) idInput.value = category.id;
+                    if (nameInput) nameInput.value = category.name || '';
+                    if (descInput) descInput.value = category.description || '';
+                    if (activeInput) activeInput.checked = category.is_active == 1;
+                    
+                    openModal('editCategoryModal');
+                } else {
+                    alert(data.message || 'Gagal mengambil data kategori');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Gagal mengambil data kategori. Silakan coba lagi.');
+            });
         });
     });
 
@@ -345,13 +442,19 @@ document.addEventListener('DOMContentLoaded', function () {
             const categoryId = this.dataset.id;
             const categoryName = this.dataset.name;
             
+            if (!categoryId) {
+                alert('ID kategori tidak ditemukan');
+                return;
+            }
+            
             if (confirm(`Apakah Anda yakin ingin menghapus kategori "${categoryName}"?`)) {
                 fetch(`/categories/${categoryId}`, {
                     method: 'DELETE',
                     headers: {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
                     }
                 })
                 .then(response => response.json())
@@ -406,27 +509,52 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             
             const formData = new FormData(this);
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="material-icons text-sm mr-1 animate-spin">sync</span> Menyimpan...';
             
             fetch('/categories', {
                 method: 'POST',
                 body: formData,
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 }
             })
             .then(response => response.json())
             .then(data => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+                
                 if (data.success) {
                     alert('Kategori berhasil ditambahkan');
-                    closeModal(this.closest('.fixed'));
+                    closeModal(addCategoryModal);
                     location.reload();
                 } else {
-                    alert(data.message || 'Gagal menambahkan kategori');
+                    if (data.errors) {
+                        Object.keys(data.errors).forEach(key => {
+                            const input = addForm.querySelector(`[name="${key}"]`);
+                            if (input) {
+                                input.classList.add('border-red-500');
+                                const errorDiv = input.parentNode.querySelector('.invalid-feedback');
+                                if (errorDiv) {
+                                    errorDiv.textContent = data.errors[key][0];
+                                    errorDiv.classList.remove('hidden');
+                                }
+                            }
+                        });
+                    } else {
+                        alert(data.message || 'Gagal menambahkan kategori');
+                    }
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
                 alert('Terjadi kesalahan saat menambahkan kategori');
             });
         });
@@ -443,37 +571,170 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             
             const categoryId = document.getElementById('edit_category_id').value;
+            if (!categoryId) {
+                alert('ID kategori tidak ditemukan');
+                return;
+            }
+            
             const formData = new FormData(this);
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="material-icons text-sm mr-1 animate-spin">sync</span> Memperbarui...';
             
             fetch(`/categories/${categoryId}`, {
                 method: 'POST',
                 body: formData,
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 }
             })
             .then(response => response.json())
             .then(data => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+                
                 if (data.success) {
                     alert('Kategori berhasil diperbarui');
-                    closeModal(this.closest('.fixed'));
+                    closeModal(editCategoryModal);
                     location.reload();
                 } else {
-                    alert(data.message || 'Gagal memperbarui kategori');
+                    if (data.errors) {
+                        Object.keys(data.errors).forEach(key => {
+                            const input = editForm.querySelector(`[name="${key}"]`);
+                            if (input) {
+                                input.classList.add('border-red-500');
+                                const errorDiv = input.parentNode.querySelector('.invalid-feedback');
+                                if (errorDiv) {
+                                    errorDiv.textContent = data.errors[key][0];
+                                    errorDiv.classList.remove('hidden');
+                                }
+                            }
+                        });
+                    } else {
+                        alert(data.message || 'Gagal memperbarui kategori');
+                    }
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
                 alert('Terjadi kesalahan saat memperbarui kategori');
             });
         });
     }
 
     // Export functionality
-    document.getElementById('exportBtn').addEventListener('click', function() {
-        window.location.href = '/categories/export';
-    });
+    const exportBtn = document.getElementById('exportBtn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', async function() {
+            try {
+                // Wait for XLSX to be available
+                let waitAttempts = 0;
+                while (typeof XLSX === 'undefined' && waitAttempts < 20) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    waitAttempts++;
+                }
+
+                // Check if SheetJS is loaded
+                if (typeof XLSX === 'undefined') {
+                    // Fallback: Load library dynamically
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js';
+                    document.head.appendChild(script);
+                    
+                    await new Promise((resolve, reject) => {
+                        script.onload = resolve;
+                        script.onerror = reject;
+                    });
+                    
+                    // Wait a bit more for XLSX to be available
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                }
+
+                // Final check
+                if (typeof XLSX === 'undefined') {
+                    alert('Library export tidak tersedia. Harap refresh halaman.');
+                    return;
+                }
+
+                // Show loading state
+                const originalContent = this.innerHTML;
+                this.disabled = true;
+                this.innerHTML = '<span class="material-icons text-sm mr-1 animate-spin">sync</span>Mengekspor...';
+
+                // Fetch export data from server
+                const response = await fetch('/categories/export', {
+                    method: 'GET',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const result = await response.json();
+
+                if (result.success && result.data && result.data.length > 0) {
+                    // Create worksheet from JSON data
+                    const worksheet = XLSX.utils.json_to_sheet(result.data);
+                    
+                    // Create new workbook
+                    const workbook = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(workbook, worksheet, 'Kategori Barang');
+
+                    // Set column widths
+                    const wscols = [
+                        {wch: 25}, // Nama Kategori
+                        {wch: 40}, // Deskripsi
+                        {wch: 15}, // Total Produk
+                        {wch: 15}, // Total Stok
+                        {wch: 20}, // Produk Stok Rendah
+                        {wch: 20}, // Nilai Stok
+                        {wch: 15}, // Status
+                        {wch: 20}, // Dibuat
+                        {wch: 20}  // Diperbarui
+                    ];
+                    worksheet['!cols'] = wscols;
+
+                    // Generate and download
+                    XLSX.writeFile(workbook, result.filename);
+
+                    // Show success message
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center space-x-2';
+                    alertDiv.innerHTML = `
+                        <span class="material-icons">check_circle</span>
+                        <span>Data berhasil diekspor (${result.data.length} kategori)</span>
+                    `;
+                    document.body.appendChild(alertDiv);
+                    setTimeout(() => alertDiv.remove(), 3000);
+                } else {
+                    throw new Error('Tidak ada data untuk diekspor');
+                }
+
+                // Restore button
+                this.disabled = false;
+                this.innerHTML = originalContent;
+
+            } catch (error) {
+                console.error('Export error:', error);
+                alert('Terjadi kesalahan saat mengekspor data: ' + error.message);
+                
+                // Restore button
+                this.disabled = false;
+                this.innerHTML = 'Export <span class="material-icons text-sm ml-1">file_download</span>';
+            }
+        });
+    }
 });
 </script>
 @endpush

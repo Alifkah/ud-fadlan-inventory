@@ -15,7 +15,6 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SupplierCreditController;
 use App\Http\Controllers\CustomerCreditController;
 use App\Http\Controllers\StockOpnameController;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -41,18 +40,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ============================================
     // CATEGORIES ROUTES
     // ============================================
+    Route::get('/categories-export', [CategoryController::class, 'export'])->name('categories.export');
     Route::resource('categories', CategoryController::class);
     Route::post('/categories/{category}/toggle-status', [CategoryController::class, 'toggleStatus'])->name('categories.toggle-status');
     Route::get('/categories/{category}/products', [CategoryController::class, 'getProductsByCategory'])->name('categories.products');
-    Route::get('/categories-export', [CategoryController::class, 'export'])->name('categories.export');
 
     // ============================================
     // PRODUCTS/STOCK ROUTES
     // ============================================
+    Route::get('/products-export', [ProductController::class, 'export'])->name('products.export');
     Route::resource('products', ProductController::class);
     Route::post('/products/{product}/adjust-stock', [ProductController::class, 'adjustStock'])->name('products.adjust-stock');
     Route::post('/products/bulk-delete', [ProductController::class, 'bulkDelete'])->name('products.bulk-delete');
-    Route::get('/products-export', [ProductController::class, 'export'])->name('products.export');
 
     // ============================================
     // STOCK MANAGEMENT ROUTES
@@ -196,6 +195,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Transaction Details (harus setelah CRUD)
         Route::get('/{sale}/details', [SalesController::class, 'getTransactionDetails'])->name('details');
         Route::get('/{sale}/print-receipt', [SalesController::class, 'printReceipt'])->name('print-receipt');
+        Route::get('/{sale}/download-receipt', [SalesController::class, 'downloadReceipt'])->name('download-receipt');
         Route::post('/{sale}/confirm-payment', [SalesController::class, 'confirmPayment'])->name('confirm-payment');
     });
 

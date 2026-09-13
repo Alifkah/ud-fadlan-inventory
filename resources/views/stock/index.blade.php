@@ -910,6 +910,12 @@ async function deleteProduct(productId) {
 // Export function
 async function exportStock() {
     try {
+        // Show loading indicator
+        const exportBtn = event.target.closest('button');
+        const originalContent = exportBtn.innerHTML;
+        exportBtn.disabled = true;
+        exportBtn.innerHTML = '<span class="material-icons mr-2 animate-spin">sync</span>Mengekspor...';
+        
         const params = new URLSearchParams();
         
         // Get current filters
@@ -921,23 +927,61 @@ async function exportStock() {
         if (stockStatus) params.append('stock_status', stockStatus);
         if (search) params.append('search', search);
         
-        const response = await fetch(`{{ route('stock.export') }}?${params}`);
+        const response = await fetch(`{{ route('stock.export') }}?${params}`, {
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        
         const data = await response.json();
         
-        if (data.success) {
+        if (data.success && data.data && data.data.length > 0) {
             // Create and download Excel file
             const worksheet = XLSX.utils.json_to_sheet(data.data);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, 'Stok Barang');
+            
+            // Apply column width
+            const wscols = [
+                {wch: 15}, // Kode Barang
+                {wch: 30}, // Nama Barang
+                {wch: 15}, // Kategori
+                {wch: 10}, // Satuan
+                {wch: 15}, // Stok Saat Ini
+                {wch: 15}, // Stok Minimum
+                {wch: 15}, // Harga Beli
+                {wch: 15}, // Harga Jual
+                {wch: 15}, // Nilai Stok
+                {wch: 20}, // Lokasi
+                {wch: 15}, // Status Stok
+                {wch: 12}  // Status Aktif
+            ];
+            worksheet['!cols'] = wscols;
+            
             XLSX.writeFile(workbook, data.filename);
             
-            showAlert('success', 'Data berhasil diekspor');
+            showAlert('success', `Data berhasil diekspor (${data.data.length} produk)`);
         } else {
-            showAlert('error', 'Gagal mengekspor data');
+            showAlert('error', 'Tidak ada data untuk diekspor');
         }
+        
+        // Restore button
+        exportBtn.disabled = false;
+        exportBtn.innerHTML = originalContent;
     } catch (error) {
-        showAlert('error', 'Terjadi kesalahan saat mengekspor data');
+        showAlert('error', 'Terjadi kesalahan saat mengekspor data: ' + error.message);
         console.error('Error:', error);
+        
+        // Restore button
+        const exportBtn = event.target.closest('button');
+        if (exportBtn) {
+            exportBtn.disabled = false;
+            exportBtn.innerHTML = '<span class="material-icons mr-2">download</span>Export';
+        }
     }
 }
 

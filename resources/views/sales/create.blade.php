@@ -178,8 +178,8 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Metode Pembayaran</label>
                         <select x-model="payment.method" class="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-primary focus:ring-primary sm:text-sm bg-white dark:bg-gray-700 text-text-light dark:text-text-dark">
                             <option value="cash">Cash</option>
-                            <option value="transfer">Transfer Bank</option>
-                            <option value="credit">Kredit</option>
+                            <!-- <option value="transfer">Transfer Bank</option> -->
+                            <!-- <option value="credit">Kredit</option> -->
                         </select>
                     </div>
 
@@ -196,7 +196,7 @@
                     </div>
 
                     <!-- Transfer Fields -->
-                    <div x-show="payment.method === 'transfer'" class="space-y-3 mt-3">
+                    <!-- <div x-show="payment.method === 'transfer'" class="space-y-3 mt-3">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nama Bank</label>
                             <input type="text" x-model="payment.bank_name" placeholder="Contoh: BCA, Mandiri, BRI" class="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-primary focus:ring-primary sm:text-sm bg-white dark:bg-gray-700 text-text-light dark:text-text-dark"/>
@@ -205,10 +205,10 @@
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">No. Rekening</label>
                             <input type="text" x-model="payment.account_number" placeholder="Nomor rekening tujuan" class="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-primary focus:ring-primary sm:text-sm bg-white dark:bg-gray-700 text-text-light dark:text-text-dark"/>
                         </div>
-                    </div>
+                    </div> -->
 
                     <!-- Credit Fields -->
-                    <div x-show="payment.method === 'credit'" class="space-y-3 mt-3">
+                    <!-- <div x-show="payment.method === 'credit'" class="space-y-3 mt-3">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tanggal Jatuh Tempo</label>
                             <input type="date" x-model="payment.due_date" :min="getTomorrowDate()" class="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-primary focus:ring-primary sm:text-sm bg-white dark:bg-gray-700 text-text-light dark:text-text-dark"/>
@@ -221,7 +221,7 @@
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Catatan Kredit</label>
                             <textarea x-model="payment.credit_notes" rows="2" class="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-primary focus:ring-primary sm:text-sm bg-white dark:bg-gray-700 text-text-light dark:text-text-dark" placeholder="Catatan tambahan untuk kredit..."></textarea>
                         </div>
-                    </div>
+                    </div> -->
 
                     <div class="mt-4">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Catatan</label>
@@ -423,6 +423,14 @@ function salesTransaction() {
             // Check stock
             if (product.current_stock <= 0) {
                 alert('Stok produk tidak tersedia!');
+                return;
+            }
+
+            const sellingPrice = parseFloat(product.selling_price);
+            
+            if (isNaN(sellingPrice) || sellingPrice < 0) {
+                alert('Harga produk tidak valid!');
+                console.error('Invalid price:', product.selling_price);
                 return;
             }
             

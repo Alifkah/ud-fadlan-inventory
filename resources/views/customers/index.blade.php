@@ -749,13 +749,124 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById('filterForm').submit();
         }
     });
+
+   // Export Functionality
+    async function exportData(type) {
+        try {
+            // Check if SheetJS is loaded
+            if (typeof XLSX === 'undefined') {
+                // Dynamically load SheetJS
+                const script = document.createElement('script');
+                script.src = 'https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js';
+                document.head.appendChild(script);
+                await new Promise((resolve, reject) => {
+                    script.onload = resolve;
+                    script.onerror = reject;
+                });
+                // Wait a bit for XLSX to be available
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+            // Final check
+            if (typeof XLSX === 'undefined') {
+                alert('Library export tidak tersedia. Harap refresh halaman.');
+                return;
+            }
+            // Get current filter parameters
+            const params = new URLSearchParams(window.location.search);
+            // Build query string
+            const queryParams = new URLSearchParams();
+            if (params.get('search')) queryParams.set('search', params.get('search'));
+            if (params.get('status')) queryParams.set('status', params.get('status'));
+            if (params.get('sort_field')) queryParams.set('sort_field', params.get('sort_field'));
+            // Show loading state
+            const exportBtn = document.getElementById('export-btn');
+            const originalContent = exportBtn.innerHTML;
+            exportBtn.disabled = true;
+            exportBtn.innerHTML = '<span class="material-icons text-sm animate-spin">sync</span> Mengekspor...';
+            // Fetch export data from server
+            const response = await fetch(`/customers/export/data?${queryParams.toString()}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                }
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const result = await response.json();
+            if (result.success && result.data && result.data.length > 0) {
+                // Create worksheet from JSON data
+                const worksheet = XLSX.utils.json_to_sheet(result.data);
+                // Create new workbook
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'Data Customer');
+                // Set column widths for better readability
+                const wscols = [
+                    {wch: 15},  // Kode Customer
+                    {wch: 30},  // Nama Customer
+                    {wch: 30},  // Email
+                    {wch: 20},  // Telepon
+                    {wch: 40},  // Alamat
+                    {wch: 15},  // Status
+                    {wch: 18},  // Total Transaksi
+                    {wch: 20},  // Total Pembelian
+                    {wch: 22},  // Rata-rata Pembelian
+                    {wch: 20},  // Pembelian Terakhir
+                    {wch: 20}   // Tanggal Daftar
+                ];
+                worksheet['!cols'] = wscols;
+                // Generate filename based on type
+                const filename = type === 'csv' 
+                    ? result.filename.replace('.xlsx', '.csv')
+                    : result.filename;
+                // Download file
+                if (type === 'csv') {
+                    XLSX.writeFile(workbook, filename, { bookType: 'csv' });
+                } else {
+                    XLSX.writeFile(workbook, filename);
+                }
+                // Show success message using showToast function that is now in scope
+                showToast(`Data berhasil diekspor (${result.data.length} customer)`);
+            } else {
+                throw new Error('Tidak ada data untuk diekspor');
+            }
+            // Restore button state
+            exportBtn.disabled = false;
+            exportBtn.innerHTML = originalContent;
+            // Close dropdown
+            document.getElementById('export-dropdown').classList.remove('open');
+        } catch (error) {
+            console.error('Export error:', error);
+            alert('Terjadi kesalahan saat mengekspor data: ' + error.message);
+            // Restore button state
+            const exportBtn = document.getElementById('export-btn');
+            if (exportBtn) {
+                exportBtn.disabled = false;
+                exportBtn.innerHTML = '<span class="material-icons text-sm">download</span> Ekspor <span class="material-icons text-sm">arrow_drop_down</span>';
+            }
+        }
+    }
+
+    // Export button event listeners
+    const exportToCsvBtn = document.querySelector('#export-dropdown .dropdown-menu a:nth-child(1)');
+    const exportToExcelBtn = document.querySelector('#export-dropdown .dropdown-menu a:nth-child(2)');
+
+    if (exportToCsvBtn) {
+        exportToCsvBtn.addEventListener('click', (e) => {
+            e.preventDefault(); // Cegah default action link
+            exportData('csv');
+        });
+    }
+
+    if (exportToExcelBtn) {
+        exportToExcelBtn.addEventListener('click', (e) => {
+            e.preventDefault(); // Cegah default action link
+            exportData('excel');
+        });
+    }
 });
 
-// Export Data Function
-function exportData(type) {
-    const params = new URLSearchParams(window.location.search);
-    params.set('export', type);
-    window.location.href = `/customers/export/data?${params.toString()}`;
-}
 </script>
 @endpush

@@ -379,7 +379,7 @@
 
                 @if($purchase->tax > 0)
                 <div class="flex justify-between text-sm">
-                    <span class="text-gray-500 dark:text-gray-400">Pajak</span>
+                    <span class="text-gray-500 dark:text-gray-400">Ongkos Pengiriman</span>
                     <span class="text-text-light dark:text-text-dark font-medium">
                         Rp {{ number_format($purchase->tax, 0, ',', '.') }}
                     </span>

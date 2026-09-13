@@ -114,7 +114,7 @@
                             <option value="code" {{ request('sort_field') == 'code' ? 'selected' : '' }}>Kode</option>
                         </select>
 
-                        <div class="relative dropdown" id="export-dropdown">
+                       <div class="relative dropdown" id="export-dropdown">
                             <button 
                                 type="button"
                                 class="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 w-full sm:w-auto justify-center" 
@@ -124,10 +124,10 @@
                                 <span class="material-icons text-sm">arrow_drop_down</span>
                             </button>
                             <div class="dropdown-menu absolute right-0 mt-2 w-48 bg-card-light dark:bg-card-dark rounded-md shadow-lg py-1 z-10">
-                                <a href="#" onclick="exportData('csv')" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                     Ekspor ke CSV
                                 </a>
-                                <a href="#" onclick="exportData('excel')" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                     Ekspor ke Excel
                                 </a>
                             </div>
@@ -743,7 +743,7 @@ document.addEventListener("DOMContentLoaded", () => {
             alert('Terjadi kesalahan saat menghapus supplier');
         }
     });
-
+    
     // Export Dropdown
     if (exportBtn) {
         exportBtn.addEventListener('click', (e) => {
@@ -751,35 +751,149 @@ document.addEventListener("DOMContentLoaded", () => {
             exportDropdown.classList.toggle('open');
         });
     }
-
     document.addEventListener('click', (event) => {
         if (exportDropdown && !exportDropdown.contains(event.target)) {
             exportDropdown.classList.remove('open');
         }
     });
 
-    // Auto submit filter on change
-    document.querySelector('select[name="status"]').addEventListener('change', function() {
-        document.getElementById('filterForm').submit();
-    });
+    // --- FUNGSI exportData YANG DIPINDAHKAN DAN DIPERBAIKI ---
+    async function exportData(type) {
+        try {
+            // Get current filter parameters from the URL
+            const params = new URLSearchParams(window.location.search);
 
-    document.querySelector('select[name="sort_field"]').addEventListener('change', function() {
-        document.getElementById('filterForm').submit();
-    });
+            // Build the correct export URL based on your defined route
+            let exportUrl = '/suppliers/export/data';
 
-    document.querySelector('input[name="search"]').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            document.getElementById('filterForm').submit();
+            // Append any existing filters as query parameters to the export URL
+            if (params.toString()) {
+                exportUrl += '?' + params.toString();
+            }
+
+            // Show loading state
+            const exportBtn = document.getElementById('export-btn');
+            const originalContent = exportBtn.innerHTML;
+            exportBtn.disabled = true;
+            exportBtn.innerHTML = '<span class="material-icons text-sm animate-spin">sync</span> Mengekspor...';
+
+            // Fetch the export data from the server
+            const response = await fetch(exportUrl, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            if (result.success && result.data && result.data.length > 0) {
+                // Dynamically load SheetJS if not already loaded
+                if (typeof XLSX === 'undefined') {
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js';
+                    document.head.appendChild(script);
+                    await new Promise((resolve, reject) => {
+                        script.onload = resolve;
+                        script.onerror = reject;
+                    });
+                    // Wait a bit for XLSX to be available
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                }
+
+                // Check again if SheetJS is loaded
+                if (typeof XLSX === 'undefined') {
+                    alert('Library export tidak tersedia. Harap refresh halaman.');
+                    return;
+                }
+
+                // Create worksheet from JSON data
+                const worksheet = XLSX.utils.json_to_sheet(result.data);
+
+                // Create new workbook
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'Data Supplier');
+
+                // Set column widths for better readability
+                const wscols = [
+                    {wch: 15},  // Kode Supplier
+                    {wch: 30},  // Nama Supplier
+                    {wch: 30},  // Perusahaan
+                    {wch: 30},  // Email
+                    {wch: 20},  // Telepon
+                    {wch: 15},  // Status
+                    {wch: 20},  // Tanggal Kerja Sama
+                    {wch: 20},  // Terakhir Diperbarui
+                    {wch: 18},  // Total Pembelian
+                    {wch: 22},  // Nilai Total Pembelian
+                    {wch: 20}   // Pembelian Terakhir
+                ];
+                worksheet['!cols'] = wscols;
+
+                // Generate filename based on type
+                const filename = type === 'csv' 
+                    ? result.filename.replace('.xlsx', '.csv')
+                    : result.filename;
+
+                // Download file
+                if (type === 'csv') {
+                    XLSX.writeFile(workbook, filename, { bookType: 'csv' });
+                } else {
+                    XLSX.writeFile(workbook, filename);
+                }
+
+                // Show success message using showToast function
+                showToast(`Data berhasil diekspor (${result.data.length} supplier)`);
+
+            } else {
+                throw new Error('Tidak ada data untuk diekspor');
+            }
+
+            // Restore button state
+            exportBtn.disabled = false;
+            exportBtn.innerHTML = originalContent;
+
+            // Close dropdown
+            document.getElementById('export-dropdown').classList.remove('open');
+
+        } catch (error) {
+            console.error('Export error:', error);
+            alert('Terjadi kesalahan saat mengekspor data: ' + error.message);
+
+            // Restore button state in case of error
+            const exportBtn = document.getElementById('export-btn');
+            if (exportBtn) {
+                exportBtn.disabled = false;
+                exportBtn.innerHTML = '<span class="material-icons text-sm">download</span> Ekspor <span class="material-icons text-sm">arrow_drop_down</span>';
+            }
         }
-    });
+    }
+
+    // --- TAMBAHKAN EVENT LISTENER UNTUK TOMBOLEKSPOR ---
+    // Ambil elemen tombol ekspor ke CSV dan Excel
+    const exportToCsvBtn = document.querySelector('#export-dropdown .dropdown-menu a:nth-child(1)');
+    const exportToExcelBtn = document.querySelector('#export-dropdown .dropdown-menu a:nth-child(2)');
+
+    if (exportToCsvBtn) {
+        exportToCsvBtn.addEventListener('click', (e) => {
+            e.preventDefault(); // Cegah default action link
+            exportData('csv');
+        });
+    }
+
+    if (exportToExcelBtn) {
+        exportToExcelBtn.addEventListener('click', (e) => {
+            e.preventDefault(); // Cegah default action link
+            exportData('excel');
+        });
+    }
 });
 
-// Export Data Function
-function exportData(type) {
-    const params = new URLSearchParams(window.location.search);
-    params.set('export', type);
-    window.location.href = `/suppliers/export?${params.toString()}`;
-}
 </script>
 @endpush

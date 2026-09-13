@@ -111,7 +111,7 @@
     </div>
 
     <!-- Manajemen Pengguna -->
-    <div class="bg-card-light dark:bg-card-dark p-6 rounded-lg shadow-sm col-span-1 lg:col-span-2">
+    <!-- <div class="bg-card-light dark:bg-card-dark p-6 rounded-lg shadow-sm col-span-1 lg:col-span-2">
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-lg font-semibold text-text-light dark:text-text-dark">Manajemen Pengguna</h3>
             <button class="flex items-center px-4 py-2 bg-primary text-white rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" type="button" onclick="alert('Fitur tambah pengguna akan segera tersedia')">
@@ -155,7 +155,7 @@
                 </tbody>
             </table>
         </div>
-    </div>
+    </div> -->
 
     <!-- Pengaturan Sistem -->
     <div class="bg-card-light dark:bg-card-dark p-6 rounded-lg shadow-sm">
@@ -366,8 +366,13 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // CSRF Token
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+    // CSRF Token - Perbaikan
+    const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+    const csrfToken = csrfTokenMeta ? csrfTokenMeta.content : '';
+
+    if (!csrfToken) {
+        console.error('CSRF token tidak ditemukan!');
+    }
 
     // Helper function untuk menampilkan notifikasi
     function showNotification(message, type = 'success') {
@@ -383,13 +388,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 3000);
     }
 
-    // Form Profil Toko
-    document.getElementById('storeProfileForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        
+    // Helper function untuk fetch dengan error handling
+    async function fetchWithErrorHandling(url, options) {
         try {
-            const response = await fetch('{{ route("settings.update-store-profile") }}', {
+            const response = await fetch(url, options);
+            
+            // Check if response is ok
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            return { success: true, data };
+        } catch (error) {
+            console.error('Fetch error:', error);
+            return { 
+                success: false, 
+                error: error.message || 'Terjadi kesalahan saat menghubungi server' 
+            };
+        }
+    }
+
+    // Form Profil Toko
+    const storeProfileForm = document.getElementById('storeProfileForm');
+    if (storeProfileForm) {
+        storeProfileForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            const result = await fetchWithErrorHandling('/settings/update-store-profile', {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': csrfToken,
@@ -398,35 +425,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: formData
             });
             
-            const data = await response.json();
-            
-            if (data.success) {
-                showNotification(data.message, 'success');
+            if (result.success && result.data.success) {
+                showNotification(result.data.message, 'success');
             } else {
-                showNotification(data.message || 'Terjadi kesalahan', 'error');
+                showNotification(result.data?.message || result.error || 'Terjadi kesalahan', 'error');
             }
-        } catch (error) {
-            showNotification('Gagal menyimpan perubahan', 'error');
-            console.error('Error:', error);
-        }
-    });
+        });
+    }
 
     // Form Pengaturan Pengguna
-    document.getElementById('userSettingsForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        
-        // Validasi password
-        const newPassword = formData.get('new_password');
-        const confirmPassword = formData.get('new_password_confirmation');
-        
-        if (newPassword && newPassword !== confirmPassword) {
-            showNotification('Password baru dan konfirmasi tidak cocok', 'error');
-            return;
-        }
-        
-        try {
-            const response = await fetch('{{ route("settings.update-user-settings") }}', {
+    const userSettingsForm = document.getElementById('userSettingsForm');
+    if (userSettingsForm) {
+        userSettingsForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            // Validasi password
+            const newPassword = formData.get('new_password');
+            const confirmPassword = formData.get('new_password_confirmation');
+            
+            if (newPassword && newPassword !== confirmPassword) {
+                showNotification('Password baru dan konfirmasi tidak cocok', 'error');
+                return;
+            }
+            
+            const result = await fetchWithErrorHandling('/settings/update-user-settings', {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': csrfToken,
@@ -435,30 +458,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: formData
             });
             
-            const data = await response.json();
-            
-            if (data.success) {
-                showNotification(data.message, 'success');
+            if (result.success && result.data.success) {
+                showNotification(result.data.message, 'success');
                 // Reset password fields
                 document.getElementById('current_password').value = '';
                 document.getElementById('new_password').value = '';
                 document.getElementById('new_password_confirmation').value = '';
             } else {
-                showNotification(data.message || 'Terjadi kesalahan', 'error');
+                showNotification(result.data?.message || result.error || 'Terjadi kesalahan', 'error');
             }
-        } catch (error) {
-            showNotification('Gagal menyimpan perubahan', 'error');
-            console.error('Error:', error);
-        }
-    });
+        });
+    }
 
     // Form Pengaturan Sistem
-    document.getElementById('systemSettingsForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        
-        try {
-            const response = await fetch('{{ route("settings.update-system-settings") }}', {
+    const systemSettingsForm = document.getElementById('systemSettingsForm');
+    if (systemSettingsForm) {
+        systemSettingsForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            const result = await fetchWithErrorHandling('/settings/update-system-settings', {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': csrfToken,
@@ -467,66 +486,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: formData
             });
             
-            const data = await response.json();
-            
-            if (data.success) {
-                showNotification(data.message, 'success');
+            if (result.success && result.data.success) {
+                showNotification(result.data.message, 'success');
             } else {
-                showNotification(data.message || 'Terjadi kesalahan', 'error');
+                showNotification(result.data?.message || result.error || 'Terjadi kesalahan', 'error');
             }
-        } catch (error) {
-            showNotification('Gagal menyimpan pengaturan', 'error');
-            console.error('Error:', error);
-        }
-    });
+        });
+    }
 
     // Toggle Notifikasi (auto-save)
     document.querySelectorAll('.toggle-notification').forEach(toggle => {
         toggle.addEventListener('change', async function() {
             const formData = new FormData();
-            formData.append('_token', csrfToken);
             
             // Ambil semua toggle notification
             document.querySelectorAll('.toggle-notification').forEach(t => {
                 formData.append(t.name, t.checked ? '1' : '0');
             });
             
-            try {
-                const response = await fetch('{{ route("settings.update-notification-settings") }}', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json'
-                    },
-                    body: formData
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    showNotification('Pengaturan notifikasi berhasil disimpan', 'success');
-                } else {
-                    showNotification(data.message || 'Terjadi kesalahan', 'error');
-                }
-            } catch (error) {
-                showNotification('Gagal menyimpan pengaturan notifikasi', 'error');
-                console.error('Error:', error);
-            }
-        });
-    });
-
-    // Form Pengaturan Keamanan
-    document.getElementById('securitySettingsForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        
-        // Tambahkan nilai toggle
-        document.querySelectorAll('.toggle-security').forEach(toggle => {
-            formData.append(toggle.name, toggle.checked ? '1' : '0');
-        });
-        
-        try {
-            const response = await fetch('{{ route("settings.update-security-settings") }}', {
+            const result = await fetchWithErrorHandling('/settings/update-notification-settings', {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': csrfToken,
@@ -535,30 +513,55 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: formData
             });
             
-            const data = await response.json();
-            
-            if (data.success) {
-                showNotification(data.message, 'success');
+            if (result.success && result.data.success) {
+                showNotification('Pengaturan notifikasi berhasil disimpan', 'success');
             } else {
-                showNotification(data.message || 'Terjadi kesalahan', 'error');
+                showNotification(result.data?.message || result.error || 'Terjadi kesalahan', 'error');
             }
-        } catch (error) {
-            showNotification('Gagal menyimpan pengaturan keamanan', 'error');
-            console.error('Error:', error);
-        }
+        });
     });
+
+    // Form Pengaturan Keamanan
+    const securitySettingsForm = document.getElementById('securitySettingsForm');
+    if (securitySettingsForm) {
+        securitySettingsForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            // Tambahkan nilai toggle
+            document.querySelectorAll('.toggle-security').forEach(toggle => {
+                formData.append(toggle.name, toggle.checked ? '1' : '0');
+            });
+            
+            const result = await fetchWithErrorHandling('/settings/update-security-settings', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: formData
+            });
+            
+            if (result.success && result.data.success) {
+                showNotification(result.data.message, 'success');
+            } else {
+                showNotification(result.data?.message || result.error || 'Terjadi kesalahan', 'error');
+            }
+        });
+    }
 
     // Backup Now
-    document.getElementById('btnBackupNow').addEventListener('click', async function() {
-        if (!confirm('Apakah Anda yakin ingin membuat backup sekarang?')) {
-            return;
-        }
-        
-        this.disabled = true;
-        this.textContent = 'Memproses...';
-        
-        try {
-            const response = await fetch('{{ route("settings.create-backup") }}', {
+    const btnBackupNow = document.getElementById('btnBackupNow');
+    if (btnBackupNow) {
+        btnBackupNow.addEventListener('click', async function() {
+            if (!confirm('Apakah Anda yakin ingin membuat backup sekarang?')) {
+                return;
+            }
+            
+            this.disabled = true;
+            this.textContent = 'Memproses...';
+            
+            const result = await fetchWithErrorHandling('/settings/create-backup', {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': csrfToken,
@@ -567,39 +570,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
             
-            const data = await response.json();
-            
-            if (data.success) {
+            if (result.success && result.data.success) {
                 showNotification('Backup berhasil dibuat', 'success');
-                // Reload halaman setelah 1 detik untuk update info backup
                 setTimeout(() => location.reload(), 1000);
             } else {
-                showNotification(data.message || 'Gagal membuat backup', 'error');
+                showNotification(result.data?.message || result.error || 'Gagal membuat backup', 'error');
             }
-        } catch (error) {
-            showNotification('Gagal membuat backup', 'error');
-            console.error('Error:', error);
-        } finally {
+            
             this.disabled = false;
             this.textContent = 'Backup Sekarang';
-        }
-    });
+        });
+    }
 
     // Reset Settings
-    document.getElementById('btnResetSettings').addEventListener('click', async function() {
-        if (!confirm('Apakah Anda yakin ingin mereset semua pengaturan ke default? Tindakan ini tidak dapat dibatalkan!')) {
-            return;
-        }
-        
-        if (!confirm('Peringatan: Profil toko dan data pengguna tidak akan terpengaruh. Lanjutkan?')) {
-            return;
-        }
-        
-        this.disabled = true;
-        this.textContent = 'Memproses...';
-        
-        try {
-            const response = await fetch('{{ route("settings.reset-settings") }}', {
+    const btnResetSettings = document.getElementById('btnResetSettings');
+    if (btnResetSettings) {
+        btnResetSettings.addEventListener('click', async function() {
+            if (!confirm('Apakah Anda yakin ingin mereset semua pengaturan ke default? Tindakan ini tidak dapat dibatalkan!')) {
+                return;
+            }
+            
+            if (!confirm('Peringatan: Profil toko dan data pengguna tidak akan terpengaruh. Lanjutkan?')) {
+                return;
+            }
+            
+            this.disabled = true;
+            this.textContent = 'Memproses...';
+            
+            const result = await fetchWithErrorHandling('/settings/reset-settings', {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': csrfToken,
@@ -608,23 +606,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
             
-            const data = await response.json();
-            
-            if (data.success) {
+            if (result.success && result.data.success) {
                 showNotification('Pengaturan berhasil direset', 'success');
-                // Reload halaman setelah 1 detik
                 setTimeout(() => location.reload(), 1000);
             } else {
-                showNotification(data.message || 'Gagal reset pengaturan', 'error');
+                showNotification(result.data?.message || result.error || 'Gagal reset pengaturan', 'error');
             }
-        } catch (error) {
-            showNotification('Gagal reset pengaturan', 'error');
-            console.error('Error:', error);
-        } finally {
+            
             this.disabled = false;
             this.textContent = 'Reset Riwayat Pengaturan';
-        }
-    });
+        });
+    }
 });
 </script>
 @endpush
