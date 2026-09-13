@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 
 class AppServiceProvider extends ServiceProvider
@@ -24,6 +25,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Force HTTPS in production (behind Render's reverse proxy)
+        if (app()->environment('production')) {
+            URL::forceScheme('https');
+        }
+
         // Share helper dengan semua views jika class exists
         if (class_exists(\App\Helpers\DashboardHelper::class)) {
             View::composer('*', function ($view) {
